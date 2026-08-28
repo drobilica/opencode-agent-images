@@ -45,4 +45,4 @@ Version tags are created from Git tags such as `v1.0.0` and become `golang-1.0.0
 
 ## Updates
 
-Dependabot checks the Docker base image and GitHub Actions weekly. Routine patch-only PRs are suppressed; minor, major, and security updates remain eligible. OpenCode is installed from its official versioned installer command and Go is selected by the base image tag; Dependabot does not reliably update the OpenCode `ARG`, so that pin is reviewed manually.
+Dependabot checks the Docker base image and GitHub Actions weekly. Routine patch-only PRs are suppressed; minor, major, and security updates remain eligible. A separate weekly workflow checks OpenCode's official stable releases and opens or updates one pull request with the version and Linux asset checksums. Go is selected by the base image tag.

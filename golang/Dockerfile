@@ -4,6 +4,7 @@ ARG OPENCODE_VERSION=1.18.25
 ARG TARGETARCH
 
 ENV DEBIAN_FRONTEND=noninteractive \
+    HOME=/home/opencode \
     GOPATH=/home/opencode/go \
     PATH=/home/opencode/.opencode/bin:/home/opencode/go/bin:${PATH} \
     XDG_CONFIG_HOME=/home/opencode/.config \

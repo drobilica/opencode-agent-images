@@ -27,6 +27,9 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4.3.0
 
+      - name: Test OpenCode updater
+        run: bash .github/scripts/test-update-opencode.sh
+
       - name: Extract image metadata
         id: meta
         uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
@@ -35,7 +38,7 @@ jobs:
           tags: |
             type=raw,value=golang-${{ github.sha }}
             type=raw,value=golang,enable=${{ github.ref == 'refs/heads/main' }}
-            type=ref,event=tag,prefix=golang-
+            type=semver,pattern={{version}},prefix=golang-
 
       - name: Build image
         uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
@@ -52,6 +55,7 @@ jobs:
           docker run --rm "${LOCAL_IMAGE}" sh -euxc '
             test "$(id -u)" -ne 0
             test "$(id -un)" = opencode
+            test "$HOME" = /home/opencode
             opencode --version
             go version
             git --version
@@ -106,7 +110,7 @@ jobs:
           tags: |
             type=raw,value=golang-${{ github.sha }}
             type=raw,value=golang,enable=${{ github.ref == 'refs/heads/main' }}
-            type=ref,event=tag,prefix=golang-
+            type=semver,pattern={{version}},prefix=golang-
 
       - name: Publish image tags
         env:
@@ -115,3 +119,16 @@ jobs:
           while IFS= read -r tag; do
             [ -n "$tag" ] && docker tag "${LOCAL_IMAGE}" "$tag" && docker push "$tag"
           done <<< "${IMAGE_TAGS}"
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: publish
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG_NAME: ${{ github.ref_name }}
+        run: gh release create "${TAG_NAME}" --generate-notes --verify-tag
