@@ -1,0 +1,117 @@
+name: Golang image
+
+concurrency:
+  group: golang-image-${{ github.ref }}
+  cancel-in-progress: false
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+    tags: ["v*.*.*"]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+  LOCAL_IMAGE: opencode-agent-images-golang:${{ github.sha }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+
+      - name: Extract image metadata
+        id: meta
+        uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=golang-${{ github.sha }}
+            type=raw,value=golang,enable=${{ github.ref == 'refs/heads/main' }}
+            type=ref,event=tag,prefix=golang-
+
+      - name: Build image
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+        with:
+          context: .
+          file: golang/Dockerfile
+          load: true
+          tags: ${{ env.LOCAL_IMAGE }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Smoke test image
+        run: |
+          docker run --rm "${LOCAL_IMAGE}" sh -euxc '
+            test "$(id -u)" -ne 0
+            test "$(id -un)" = opencode
+            opencode --version
+            go version
+            git --version
+            gh --version
+            jq --version
+          '
+
+      - name: Save smoke-tested image
+        run: docker save "${LOCAL_IMAGE}" -o golang-image.tar
+
+      - name: Upload smoke-tested image
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: golang-image-${{ github.sha }}
+          path: golang-image.tar
+          retention-days: 1
+
+  publish:
+    if: github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+
+      - name: Download smoke-tested image
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: golang-image-${{ github.sha }}
+
+      - name: Load smoke-tested image
+        run: docker load --input golang-image.tar
+
+      - name: Log in to GHCR
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract image metadata
+        id: meta
+        uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=golang-${{ github.sha }}
+            type=raw,value=golang,enable=${{ github.ref == 'refs/heads/main' }}
+            type=ref,event=tag,prefix=golang-
+
+      - name: Publish image tags
+        env:
+          IMAGE_TAGS: ${{ steps.meta.outputs.tags }}
+        run: |
+          while IFS= read -r tag; do
+            [ -n "$tag" ] && docker tag "${LOCAL_IMAGE}" "$tag" && docker push "$tag"
+          done <<< "${IMAGE_TAGS}"
