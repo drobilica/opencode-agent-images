@@ -4,7 +4,7 @@ set -euo pipefail
 
 repository_root="${REPOSITORY_ROOT:-$(git rev-parse --show-toplevel)}"
 dockerfile="${repository_root}/golang/Dockerfile"
-readme="${repository_root}/README.md"
+readme="${repository_root}/golang/README.md"
 
 current_version="$(sed -nE 's/^ARG OPENCODE_VERSION=([^[:space:]]+)$/\1/p' "${dockerfile}")"
 

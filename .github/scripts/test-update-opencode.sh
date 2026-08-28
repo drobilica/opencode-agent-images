@@ -6,7 +6,7 @@ temporary_directory="$(mktemp -d)"
 trap 'rm -rf "${temporary_directory}"' EXIT
 mkdir -p "${temporary_directory}/golang"
 cp "${repository_root}/golang/Dockerfile" "${temporary_directory}/golang/Dockerfile"
-cp "${repository_root}/README.md" "${temporary_directory}/README.md"
+cp "${repository_root}/golang/README.md" "${temporary_directory}/golang/README.md"
 current_version="$(sed -nE 's/^ARG OPENCODE_VERSION=([^[:space:]]+)$/\1/p' "${repository_root}/golang/Dockerfile")"
 simulated_version="999.0.0"
 
@@ -15,7 +15,7 @@ UPDATE_OPENCODE_AMD64_SHA256=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 UPDATE_OPENCODE_ARM64_SHA256=bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb \
 REPOSITORY_ROOT="${temporary_directory}" bash "${repository_root}/.github/scripts/update-opencode.sh"
 cmp "${repository_root}/golang/Dockerfile" "${temporary_directory}/golang/Dockerfile"
-cmp "${repository_root}/README.md" "${temporary_directory}/README.md"
+cmp "${repository_root}/golang/README.md" "${temporary_directory}/golang/README.md"
 
 UPDATE_OPENCODE_VERSION="${simulated_version}" \
 UPDATE_OPENCODE_AMD64_SHA256=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa \
@@ -25,4 +25,4 @@ REPOSITORY_ROOT="${temporary_directory}" bash "${repository_root}/.github/script
 grep -qx "ARG OPENCODE_VERSION=${simulated_version}" "${temporary_directory}/golang/Dockerfile"
 grep -q 'OPENCODE_SHA256=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' "${temporary_directory}/golang/Dockerfile"
 grep -q 'OPENCODE_SHA256=bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb' "${temporary_directory}/golang/Dockerfile"
-grep -qx -- "- OpenCode \`${simulated_version}\`" "${temporary_directory}/README.md"
+grep -qx -- "- OpenCode \`${simulated_version}\`" "${temporary_directory}/golang/README.md"
