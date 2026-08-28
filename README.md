@@ -41,7 +41,7 @@ Images are published as:
 ghcr.io/drobilica/opencode-agent-images:golang-<tag>
 ```
 
-Version tags are created from Git tags such as `v1.0.0` and become `golang-1.0.0`. Builds from `main` also publish the convenient moving `golang` tag and a commit-derived `golang-<commit-sha>` tag. Consumers requiring immutable deployment should use an image digest.
+Version tags are created from Git tags such as `v1.0.0` and become `golang-1.0.0`. Images are published only for release tags, so consumers can use a clear versioned tag or an image digest.
 
 ## Updates
 
