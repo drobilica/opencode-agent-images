@@ -18,7 +18,7 @@ Use a versioned release tag:
 docker pull ghcr.io/drobilica/opencode-agent-images:golang-<version>
 ```
 
-For example, the first patch release using this publishing policy is `golang-0.1.1`.
+Available versions are listed in [GitHub Releases](https://github.com/drobilica/opencode-agent-images/releases).
 
 ## Build
 

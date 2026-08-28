@@ -46,6 +46,8 @@ jobs:
           file: golang/Dockerfile
           load: true
           tags: ${{ env.LOCAL_IMAGE }}
+          build-args: |
+            IMAGE_VERSION=${{ github.ref_name }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -61,6 +63,7 @@ jobs:
             gh --version
             jq --version
           '
+          test "$(docker image inspect --format '{{ index .Config.Labels "org.opencontainers.image.version" }}' "${LOCAL_IMAGE}")" = "${GITHUB_REF_NAME}"
 
       - name: Save smoke-tested image
         run: docker save "${LOCAL_IMAGE}" -o golang-image.tar

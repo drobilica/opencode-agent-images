@@ -1,7 +1,10 @@
 FROM golang:1.27.0-bookworm@sha256:ded31c68586d2e49e760acc2e65a884b23d032e9bbbed0ae0c55abd3fcaf4452
 
 ARG OPENCODE_VERSION=1.18.25
+ARG IMAGE_VERSION=dev
 ARG TARGETARCH
+
+LABEL org.opencontainers.image.version="${IMAGE_VERSION}"
 
 ENV DEBIAN_FRONTEND=noninteractive \
     HOME=/home/opencode \
