@@ -7,6 +7,7 @@ Small, reusable container images for OpenCode coding agents and language toolcha
 | Image | Documentation | Pull |
 | --- | --- | --- |
 | Go | [Golang image](golang/README.md) | `ghcr.io/drobilica/opencode-agent-images:golang-<version>` |
+| Codex generic development | [Codex image](codex-generic-dev/README.md) | `ghcr.io/drobilica/codex-generic-dev:<version>` |
 
 Images run as a non-root `opencode` user and include no project files or credentials. Versioned images are published from release tags; use a specific version or an image digest.
 
