@@ -18,7 +18,7 @@ ENV DEBIAN_FRONTEND=noninteractive \
 
 RUN apt-get update \
     && apt-get install --no-install-recommends --yes \
-        bash ca-certificates curl file gcc g++ make pkg-config \
+        bash bubblewrap ca-certificates curl file gcc g++ make pkg-config \
         git gh jq ripgrep fd-find \
         less lsof procps psmisc strace \
         openssh-client tar unzip xz-utils zip \
