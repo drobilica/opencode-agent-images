@@ -33,6 +33,7 @@ RUN apt-get update \
     && echo "${CODEX_SHA256}  /tmp/codex.tar.gz" | sha256sum --check --strict \
     && tar -xzf /tmp/codex.tar.gz -C /opt \
     && install -m 0755 /opt/bin/codex /usr/local/bin/codex \
+    && install -m 0755 /opt/bin/codex-code-mode-host /usr/local/bin/codex-code-mode-host \
     && curl -fsSL "https://github.com/astral-sh/uv/releases/download/${UV_VERSION}/${UV_ASSET}" -o /tmp/uv.tar.gz \
     && echo "${UV_SHA256}  /tmp/uv.tar.gz" | sha256sum --check --strict \
     && tar -xzf /tmp/uv.tar.gz -C /tmp \
