@@ -13,7 +13,7 @@ Images run as a non-root `opencode` user and include no project files or credent
 
 ## Maintenance
 
-Dependabot updates Docker and GitHub Actions dependencies. A weekly workflow opens one pull request for stable OpenCode updates, including verified Linux asset checksums.
+Dependabot updates Docker and GitHub Actions dependencies. A daily workflow checks stable Codex CLI and OpenCode releases, then opens or updates separate pull requests with verified Linux asset checksums. Normal image CI validates each pull request; updates are never auto-merged. Run it manually from **Actions → Update Codex and OpenCode dependencies → Run workflow**.
 
 ## License
 

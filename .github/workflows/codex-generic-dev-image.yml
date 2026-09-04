@@ -1,30 +1,113 @@
 name: Codex generic development image
 
+concurrency:
+  group: codex-generic-dev-image-${{ github.ref }}
+  cancel-in-progress: false
+
 on:
+  pull_request:
   push:
+    branches: [main]
     tags: ["codex-generic-dev-v*.*.*"]
 
-permissions:
-  contents: read
-  packages: write
+env:
+  REGISTRY: ghcr.io
+  LOCAL_IMAGE: codex-generic-dev:${{ github.sha }}
 
 jobs:
-  publish:
+  build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4.3.0
-      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - id: version
-        run: echo "tag=${GITHUB_REF_NAME#codex-generic-dev-v}" >> "$GITHUB_OUTPUT"
-      - uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4.3.0
+
+      - name: Test dependency updater
+        run: bash .github/scripts/test-update-dependencies.sh
+
+      - name: Extract image version
+        id: version
+        run: |
+          if [[ "${GITHUB_REF_TYPE}" == tag ]]; then
+            echo "version=${GITHUB_REF_NAME#codex-generic-dev-v}" >>"${GITHUB_OUTPUT}"
+          else
+            echo "version=${GITHUB_REF_NAME}" >>"${GITHUB_OUTPUT}"
+          fi
+
+      - name: Build image
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
         with:
           context: .
           file: codex-generic-dev/Dockerfile
-          push: true
-          build-args: IMAGE_VERSION=${{ steps.version.outputs.tag }}
-          tags: ghcr.io/drobilica/codex-generic-dev:${{ steps.version.outputs.tag }}
+          load: true
+          tags: ${{ env.LOCAL_IMAGE }}
+          build-args: |
+            IMAGE_VERSION=${{ steps.version.outputs.version }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Smoke test image
+        env:
+          EXPECTED_IMAGE_VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          docker run --rm "${LOCAL_IMAGE}" sh -euxc '
+            test "$(id -u)" -ne 0
+            test "$(id -un)" = codex
+            test "$HOME" = /home/codex
+            codex --version
+            codex-code-mode-host --help
+            go version
+            uv --version
+            git --version
+            gh --version
+            jq --version
+          '
+          test "$(docker image inspect --format '{{ index .Config.Labels "org.opencontainers.image.version" }}' "${LOCAL_IMAGE}")" = "${EXPECTED_IMAGE_VERSION}"
+
+      - name: Save smoke-tested image
+        run: docker save "${LOCAL_IMAGE}" -o codex-generic-dev-image.tar
+
+      - name: Upload smoke-tested image
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: codex-generic-dev-image-${{ github.sha }}
+          path: codex-generic-dev-image.tar
+          retention-days: 1
+
+  publish:
+    if: startsWith(github.ref, 'refs/tags/codex-generic-dev-v')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Download smoke-tested image
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: codex-generic-dev-image-${{ github.sha }}
+
+      - name: Load smoke-tested image
+        run: docker load --input codex-generic-dev-image.tar
+
+      - name: Log in to GHCR
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish image
+        env:
+          TAG_VERSION: ${{ github.ref_name }}
+        run: |
+          tag="${TAG_VERSION#codex-generic-dev-v}"
+          docker tag "${LOCAL_IMAGE}" "${REGISTRY}/drobilica/codex-generic-dev:${tag}"
+          docker push "${REGISTRY}/drobilica/codex-generic-dev:${tag}"

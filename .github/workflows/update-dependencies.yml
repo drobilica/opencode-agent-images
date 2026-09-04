@@ -1,0 +1,122 @@
+name: Update Codex and OpenCode dependencies
+
+on:
+  schedule:
+    - cron: "23 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: update-dependencies
+  cancel-in-progress: false
+
+jobs:
+  update:
+    strategy:
+      fail-fast: false
+      matrix:
+        component: [codex, opencode]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Reset to the default branch
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          git fetch --no-tags origin "refs/heads/${DEFAULT_BRANCH}:refs/remotes/origin/${DEFAULT_BRANCH}"
+          git switch --detach "origin/${DEFAULT_BRANCH}"
+
+      - name: Detect and apply stable release
+        id: update
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash .github/scripts/update-dependency.sh "${{ matrix.component }}"
+
+      - name: Commit and create or update pull request
+        if: steps.update.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          COMPONENT: ${{ matrix.component }}
+          BRANCH: automation/update-${{ matrix.component }}
+          PREVIOUS_VERSION: ${{ steps.update.outputs.previous }}
+          NEW_VERSION: ${{ steps.update.outputs.new }}
+          RELEASE_URL: ${{ steps.update.outputs.release_url }}
+        run: |
+          set -euo pipefail
+          case "${COMPONENT}" in
+            codex)
+              dockerfile=codex-generic-dev/Dockerfile
+              readme=codex-generic-dev/README.md
+              title="chore(deps): update Codex CLI to ${NEW_VERSION}"
+              ;;
+            opencode)
+              dockerfile=golang/Dockerfile
+              readme=golang/README.md
+              title="chore(deps): update OpenCode to ${NEW_VERSION}"
+              ;;
+            *) echo "Unexpected component" >&2; exit 2 ;;
+          esac
+          expected_files="$(printf '%s\n' "${dockerfile}" "${readme}" | sort)"
+          actual_files="$(git diff --name-only | sort)"
+          [[ "${actual_files}" == "${expected_files}" ]] || {
+            echo "Updater changed unexpected files:" >&2
+            printf '%s\n' "${actual_files}" >&2
+            exit 1
+          }
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- "${dockerfile}" "${readme}"
+          staged_files="$(git diff --cached --name-only | sort)"
+          [[ "${staged_files}" == "${expected_files}" ]] || { echo "Unexpected staged files" >&2; exit 1; }
+          git commit -m "${title}"
+
+          remote_line="$(git ls-remote origin "refs/heads/${BRANCH}")" || {
+            echo "Could not inspect automation branch" >&2
+            exit 1
+          }
+          if [[ -n "${remote_line}" ]]; then
+            remote_sha="${remote_line%%[[:space:]]*}"
+            [[ "${remote_sha}" =~ ^[0-9a-f]{40}$ ]] || { echo "Invalid remote branch SHA" >&2; exit 1; }
+          else
+            remote_sha=0000000000000000000000000000000000000000
+          fi
+          new_tree="$(git rev-parse HEAD^{tree})"
+          should_push=true
+          if [[ "${remote_sha}" != 0000000000000000000000000000000000000000 ]]; then
+            git fetch --no-tags origin "refs/heads/${BRANCH}"
+            remote_tree="$(git rev-parse FETCH_HEAD^{tree})"
+            [[ "${remote_tree}" == "${new_tree}" ]] && should_push=false
+          fi
+          if [[ "${should_push}" == true ]]; then
+            git push --force-with-lease="refs/heads/${BRANCH}:${remote_sha}" origin "HEAD:refs/heads/${BRANCH}"
+          fi
+
+          # Include the canonical upstream name rather than a value from release text.
+          if [[ "${COMPONENT}" == codex ]]; then
+            body="$(printf 'Upstream: openai/codex\nPrevious version: %s\nNew version: %s\nRelease: %s\n\nAutomated daily dependency update.\n' "${PREVIOUS_VERSION}" "${NEW_VERSION}" "${RELEASE_URL}")"
+          else
+            body="$(printf 'Upstream: anomalyco/opencode\nPrevious version: %s\nNew version: %s\nRelease: %s\n\nAutomated daily dependency update.\n' "${PREVIOUS_VERSION}" "${NEW_VERSION}" "${RELEASE_URL}")"
+          fi
+          pr_number="$(gh pr list --state open --head "${BRANCH}" --json number,baseRefName |
+            jq -r --arg base "${DEFAULT_BRANCH}" '[.[] | select(.baseRefName == $base) | .number][0] // empty')"
+          if [[ -n "${pr_number}" ]]; then
+            gh pr edit "${pr_number}" --title "${title}" --body "${body}"
+          else
+            if ! create_output="$(gh pr create --base "${DEFAULT_BRANCH}" --head "${BRANCH}" --title "${title}" --body "${body}" 2>&1)"; then
+              # A concurrent run may have created the exact PR; edit it after re-reading.
+              pr_number="$(gh pr list --state open --head "${BRANCH}" --json number,baseRefName |
+                jq -r --arg base "${DEFAULT_BRANCH}" '[.[] | select(.baseRefName == $base) | .number][0] // empty')"
+              [[ -n "${pr_number}" ]] || { printf '%s\n' "${create_output}" >&2; exit 1; }
+              gh pr edit "${pr_number}" --title "${title}" --body "${body}"
+            else
+              printf '%s\n' "${create_output}"
+            fi
+          fi
