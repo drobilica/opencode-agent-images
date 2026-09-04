@@ -1,6 +1,6 @@
 FROM golang:1.27.0-bookworm@sha256:ded31c68586d2e49e760acc2e65a884b23d032e9bbbed0ae0c55abd3fcaf4452
 
-ARG CODEX_VERSION=0.151.0
+ARG CODEX_VERSION=0.153.3
 ARG UV_VERSION=0.12.7
 ARG IMAGE_VERSION=dev
 ARG TARGETARCH
@@ -25,8 +25,8 @@ RUN apt-get update \
         python3 python3-pip python3-venv \
     && rm -rf /var/lib/apt/lists/* \
     && case "${TARGETARCH}" in \
-        amd64) CODEX_ASSET=codex-package-x86_64-unknown-linux-musl.tar.gz CODEX_SHA256=6e35ac60b86c0e8c7f8bcf797be8b92206199f6253200b66ff0547276f8cfa5c UV_ASSET=uv-x86_64-unknown-linux-gnu.tar.gz UV_SHA256=788f18abea7c5f55d6216e4f5613fd89d4d59b631efeec117b2b07fe72f1da21 ;; \
-        arm64) CODEX_ASSET=codex-package-aarch64-unknown-linux-musl.tar.gz CODEX_SHA256=c64ad6e4f82609552a37069365b50528ef49e986aeab24a538781a18a402773d UV_ASSET=uv-aarch64-unknown-linux-gnu.tar.gz UV_SHA256=66393193038dd7eb108abd7a218d9cec04ac70ab98242b0720fa94de19223b7c ;; \
+        amd64) CODEX_ASSET=codex-package-x86_64-unknown-linux-musl.tar.gz CODEX_SHA256=47bb1fb36fb1dbd5fe1af3eb0db422ffb4c3c38d9c1762c7618a9bed46c44a63 UV_ASSET=uv-x86_64-unknown-linux-gnu.tar.gz UV_SHA256=788f18abea7c5f55d6216e4f5613fd89d4d59b631efeec117b2b07fe72f1da21 ;; \
+        arm64) CODEX_ASSET=codex-package-aarch64-unknown-linux-musl.tar.gz CODEX_SHA256=53d4604d339cdc87f1c396aca80c2addc8e092987b1b15c5f34dcda1fa54748a UV_ASSET=uv-aarch64-unknown-linux-gnu.tar.gz UV_SHA256=66393193038dd7eb108abd7a218d9cec04ac70ab98242b0720fa94de19223b7c ;; \
         *) echo "Unsupported architecture: ${TARGETARCH}" >&2; exit 1 ;; \
     esac \
     && curl -fsSL "https://github.com/openai/codex/releases/download/rust-v${CODEX_VERSION}/${CODEX_ASSET}" -o /tmp/codex.tar.gz \
