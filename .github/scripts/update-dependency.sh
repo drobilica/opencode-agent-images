@@ -87,9 +87,9 @@ docker_amd64_count="$(grep -Ec "${component_upper}_ASSET=${asset_amd64} ${compon
 docker_arm64_count="$(grep -Ec "${component_upper}_ASSET=${asset_arm64} ${component_upper}_SHA256=[[:xdigit:]]{64}" "${dockerfile}" || true)"
 [[ "${docker_amd64_count}" == 1 && "${docker_arm64_count}" == 1 ]] || { echo "Expected one checksum line per architecture" >&2; exit 1; }
 if [[ "${component}" == codex ]]; then
-  readme_count="$(grep -Ec '^Includes pinned Codex \`[0-9]+\.[0-9]+\.[0-9]+\`,' "${readme}" || true)"
+  readme_count="$(grep -Ec '^Includes pinned Codex `[0-9]+\.[0-9]+\.[0-9]+`,' "${readme}" || true)"
 else
-  readme_count="$(grep -Ec '^- OpenCode \`[0-9]+\.[0-9]+\.[0-9]+\`$' "${readme}" || true)"
+  readme_count="$(grep -Ec '^- OpenCode `[0-9]+\.[0-9]+\.[0-9]+`$' "${readme}" || true)"
 fi
 [[ "${readme_count}" == 1 ]] || { echo "Expected one README version pin" >&2; exit 1; }
 
