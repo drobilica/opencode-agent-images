@@ -15,6 +15,21 @@ copy_component() {
   cp "${root}/codex-generic-dev/README.md" "${destination}/codex-generic-dev/README.md"
   cp "${root}/golang/Dockerfile" "${destination}/golang/Dockerfile"
   cp "${root}/golang/README.md" "${destination}/golang/README.md"
+
+  # Keep test inputs independent of the versions currently pinned by the
+  # repository, including when this suite runs on an automated update PR.
+  sed -E 's/^ARG CODEX_VERSION=.*/ARG CODEX_VERSION=0.151.0/' \
+    "${destination}/codex-generic-dev/Dockerfile" >"${destination}/codex-generic-dev/Dockerfile.tmp"
+  mv "${destination}/codex-generic-dev/Dockerfile.tmp" "${destination}/codex-generic-dev/Dockerfile"
+  sed -E 's/^Includes pinned Codex `[0-9]+\.[0-9]+\.[0-9]+`,/Includes pinned Codex `0.151.0`,/' \
+    "${destination}/codex-generic-dev/README.md" >"${destination}/codex-generic-dev/README.md.tmp"
+  mv "${destination}/codex-generic-dev/README.md.tmp" "${destination}/codex-generic-dev/README.md"
+  sed -E 's/^ARG OPENCODE_VERSION=.*/ARG OPENCODE_VERSION=1.18.25/' \
+    "${destination}/golang/Dockerfile" >"${destination}/golang/Dockerfile.tmp"
+  mv "${destination}/golang/Dockerfile.tmp" "${destination}/golang/Dockerfile"
+  sed -E 's/^- OpenCode `[0-9]+\.[0-9]+\.[0-9]+`$/- OpenCode `1.18.25`/' \
+    "${destination}/golang/README.md" >"${destination}/golang/README.md.tmp"
+  mv "${destination}/golang/README.md.tmp" "${destination}/golang/README.md"
   printf 'sentinel\n' >"${destination}/unrelated.txt"
 }
 run_update() {
