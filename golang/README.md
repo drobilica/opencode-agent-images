@@ -4,7 +4,7 @@ A Debian Bookworm image for OpenCode agents that need Go.
 
 ## Includes
 
-- OpenCode `1.18.28`
+- OpenCode `1.18.29`
 - Go `1.27.0`
 - `git`, GitHub CLI (`gh`), Bash, curl, jq, CA certificates, and ripgrep
 
