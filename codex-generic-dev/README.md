@@ -2,7 +2,7 @@
 
 Reusable Debian Bookworm development image for a persistent Codex workspace.
 
-Includes pinned Codex `0.153.3`, uv `0.12.7`, Go, Python/venv/pip, Git, GitHub
+Includes pinned Codex `0.153.4`, uv `0.12.7`, Go, Python/venv/pip, Git, GitHub
 CLI, compiler and archive tools, SSH tools, search tools, and process-debugging
 utilities, and Bubblewrap for Codex sandboxing. The downloaded Codex and uv assets use architecture-specific SHA-256
 verification.
