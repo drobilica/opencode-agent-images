@@ -1,0 +1,37 @@
+name: Repository quality
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Check shell syntax
+        run: bash -n .github/scripts/*.sh
+
+      - name: Run ShellCheck
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes shellcheck
+          shellcheck --severity=error .github/scripts/*.sh
+
+      - name: Lint Golang Dockerfile
+        uses: hadolint/hadolint-action@2a66e89f53d0771bb131a7fa31f3136336094aa6 # v3.4.0
+        with:
+          dockerfile: golang/Dockerfile
+          failure-threshold: error
+
+      - name: Lint Codex Dockerfile
+        uses: hadolint/hadolint-action@2a66e89f53d0771bb131a7fa31f3136336094aa6 # v3.4.0
+        with:
+          dockerfile: codex-generic-dev/Dockerfile
+          failure-threshold: error

@@ -9,6 +9,15 @@ updates:
       - dependency-name: "golang"
         update-types: ["version-update:semver-patch"]
 
+  - package-ecosystem: docker
+    directory: /codex-generic-dev
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 10
+    ignore:
+      - dependency-name: "golang"
+        update-types: ["version-update:semver-patch"]
+
   - package-ecosystem: github-actions
     directory: /
     schedule:

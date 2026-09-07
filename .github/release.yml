@@ -1,0 +1,13 @@
+changelog:
+  categories:
+    - title: Agent and image updates
+      labels:
+        - dependencies
+        - image
+    - title: CI and maintenance
+      labels:
+        - ci
+        - maintenance
+    - title: Other changes
+      labels:
+        - "*"
