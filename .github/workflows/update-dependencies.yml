@@ -6,6 +6,7 @@ on:
   workflow_dispatch:
 
 permissions:
+  actions: write
   contents: write
   pull-requests: write
 
@@ -56,11 +57,13 @@ jobs:
               dockerfile=codex-generic-dev/Dockerfile
               readme=codex-generic-dev/README.md
               title="chore(deps): update Codex CLI to ${NEW_VERSION}"
+              validation_workflow=codex-generic-dev-image.yml
               ;;
             opencode)
               dockerfile=golang/Dockerfile
               readme=golang/README.md
               title="chore(deps): update OpenCode to ${NEW_VERSION}"
+              validation_workflow=golang-image.yml
               ;;
             *) echo "Unexpected component" >&2; exit 2 ;;
           esac
@@ -98,6 +101,15 @@ jobs:
           if [[ "${should_push}" == true ]]; then
             git push --force-with-lease="refs/heads/${BRANCH}:${remote_sha}" origin "HEAD:refs/heads/${BRANCH}"
           fi
+          validation_sha_line="$(git ls-remote origin "refs/heads/${BRANCH}")" || {
+            echo "Could not determine automation branch HEAD after update" >&2
+            exit 1
+          }
+          validation_sha="${validation_sha_line%%[[:space:]]*}"
+          [[ "${validation_sha}" =~ ^[0-9a-f]{40}$ ]] || {
+            echo "Invalid automation branch HEAD SHA" >&2
+            exit 1
+          }
 
           # Include the canonical upstream name rather than a value from release text.
           if [[ "${COMPONENT}" == codex ]]; then
@@ -120,3 +132,4 @@ jobs:
               printf '%s\n' "${create_output}"
             fi
           fi
+          gh workflow run "${validation_workflow}" --ref "${BRANCH}" -f "expected_sha=${validation_sha}"

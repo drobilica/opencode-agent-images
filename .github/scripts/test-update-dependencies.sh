@@ -125,4 +125,32 @@ grep -q 'automation/update-${{ matrix.component }}' "${root}/.github/workflows/u
 grep -q 'gh pr list --state open --head "${BRANCH}"' "${root}/.github/workflows/update-dependencies.yml"
 grep -q 'gh pr edit "${pr_number}"' "${root}/.github/workflows/update-dependencies.yml"
 grep -q 'Automated daily dependency update' "${root}/.github/workflows/update-dependencies.yml"
+
+# Automation validation dispatches the actual remote branch HEAD and selects
+# only the image workflow affected by the dependency update.
+workflow="${root}/.github/workflows/update-dependencies.yml"
+grep -q '^  actions: write$' "${workflow}"
+grep -q 'validation_workflow=codex-generic-dev-image.yml' "${workflow}"
+grep -q 'validation_workflow=golang-image.yml' "${workflow}"
+grep -q 'git ls-remote origin "refs/heads/${BRANCH}"' "${workflow}"
+grep -q 'gh workflow run "${validation_workflow}" --ref "${BRANCH}"' "${workflow}"
+grep -q 'expected_sha=${validation_sha}' "${workflow}"
+grep -q 'force-with-lease="refs/heads/${BRANCH}:${remote_sha}"' "${workflow}"
+grep -q 'gh pr create --base "${DEFAULT_BRANCH}" --head "${BRANCH}"' "${workflow}"
+grep -q 'gh pr edit "${pr_number}"' "${workflow}"
+! grep -q 'pull_request_target\|statuses: write\|checks: write' "${workflow}"
+
+for image_workflow in codex-generic-dev-image.yml golang-image.yml; do
+  image_workflow_path="${root}/.github/workflows/${image_workflow}"
+  grep -q '^  pull_request:$' "${image_workflow_path}"
+  grep -q '^  workflow_dispatch:$' "${image_workflow_path}"
+  grep -q 'required: true' "${image_workflow_path}"
+  grep -q 'test "${GITHUB_SHA}" = "${EXPECTED_SHA}"' "${image_workflow_path}"
+  grep -q 'ref:.*inputs.expected_sha.*github.sha' "${image_workflow_path}"
+  grep -q '^  push:$' "${image_workflow_path}"
+done
+grep -q 'branches: \[main\]' "${root}/.github/workflows/codex-generic-dev-image.yml"
+grep -q 'tags: \["codex-generic-dev-v\*\.\*\.\*"\]' "${root}/.github/workflows/codex-generic-dev-image.yml"
+grep -q 'branches: \[main\]' "${root}/.github/workflows/golang-image.yml"
+grep -q 'tags: \["v\*\.\*\.\*"\]' "${root}/.github/workflows/golang-image.yml"
 echo "dependency updater tests passed"
