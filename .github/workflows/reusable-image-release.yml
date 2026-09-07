@@ -254,7 +254,7 @@ jobs:
       - name: Sign and verify immutable digest
         env:
           DIGEST: ${{ steps.release.outputs.digest }}
-          IDENTITY: https://github.com/${{ github.workflow_ref }}
+          IDENTITY: https://github.com/${{ github.repository }}/.github/workflows/reusable-image-release.yml@${{ github.ref }}
           PACKAGE: ${{ steps.image.outputs.package }}
         run: |
           cosign sign --yes "${PACKAGE}@${DIGEST}"
@@ -267,7 +267,7 @@ jobs:
         env:
           DIGEST: ${{ steps.release.outputs.digest }}
           FAMILY: ${{ inputs.family }}
-          SIGNING_IDENTITY: https://github.com/${{ github.workflow_ref }}
+          SIGNING_IDENTITY: https://github.com/${{ github.repository }}/.github/workflows/reusable-image-release.yml@${{ github.ref }}
         run: bash .github/scripts/release-notes.sh "${FAMILY}" "${DIGEST}" trivy-release.json release-notes.md
 
       - name: Create GitHub Release
