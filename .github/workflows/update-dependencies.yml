@@ -57,13 +57,13 @@ jobs:
               dockerfile=codex-generic-dev/Dockerfile
               readme=codex-generic-dev/README.md
               title="chore(deps): update Codex CLI to ${NEW_VERSION}"
-              validation_workflow=codex-generic-dev-image.yml
+              validation_workflow=codex-generic-dev.yml
               ;;
             opencode)
-              dockerfile=golang/Dockerfile
-              readme=golang/README.md
+              dockerfile=opencode-v1-golang-dev/Dockerfile
+              readme=opencode-v1-golang-dev/README.md
               title="chore(deps): update OpenCode to ${NEW_VERSION}"
-              validation_workflow=golang-image.yml
+              validation_workflow=opencode-v1-golang-dev.yml
               ;;
             *) echo "Unexpected component" >&2; exit 2 ;;
           esac
@@ -91,11 +91,11 @@ jobs:
           else
             remote_sha=0000000000000000000000000000000000000000
           fi
-          new_tree="$(git rev-parse HEAD^{tree})"
+          new_tree="$(git rev-parse 'HEAD^{tree}')"
           should_push=true
           if [[ "${remote_sha}" != 0000000000000000000000000000000000000000 ]]; then
             git fetch --no-tags origin "refs/heads/${BRANCH}"
-            remote_tree="$(git rev-parse FETCH_HEAD^{tree})"
+            remote_tree="$(git rev-parse 'FETCH_HEAD^{tree}')"
             [[ "${remote_tree}" == "${new_tree}" ]] && should_push=false
           fi
           if [[ "${should_push}" == true ]]; then

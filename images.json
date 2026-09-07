@@ -1,0 +1,44 @@
+[
+  {
+    "family": "opencode-v1-golang-dev",
+    "title": "OpenCode v1 Go Dev",
+    "description": "OpenCode v1 development image with the Go toolchain",
+    "agent": "opencode",
+    "channel": "stable",
+    "path": "opencode-v1-golang-dev",
+    "dockerfile": "opencode-v1-golang-dev/Dockerfile",
+    "package": "ghcr.io/drobilica/opencode-v1-golang-dev",
+    "release_tag_prefix": "opencode-v1-golang-dev-v",
+    "moving_tags": ["latest"],
+    "prerelease": false,
+    "agent_version_arg": "OPENCODE_VERSION"
+  },
+  {
+    "family": "opencode-v2-golang-dev",
+    "title": "OpenCode v2 Go Dev",
+    "description": "Experimental OpenCode v2 development image with the Go toolchain",
+    "agent": "opencode",
+    "channel": "beta",
+    "path": "opencode-v2-golang-dev",
+    "dockerfile": "opencode-v2-golang-dev/Dockerfile",
+    "package": "ghcr.io/drobilica/opencode-v2-golang-dev",
+    "release_tag_prefix": "opencode-v2-golang-dev-v",
+    "moving_tags": ["latest"],
+    "prerelease": true,
+    "agent_version_arg": "OPENCODE_VERSION"
+  },
+  {
+    "family": "codex-generic-dev",
+    "title": "Codex Generic Dev",
+    "description": "Codex development image with Go, Python, and uv toolchains",
+    "agent": "codex",
+    "channel": "stable",
+    "path": "codex-generic-dev",
+    "dockerfile": "codex-generic-dev/Dockerfile",
+    "package": "ghcr.io/drobilica/codex-generic-dev",
+    "release_tag_prefix": "codex-generic-dev-v",
+    "moving_tags": ["latest"],
+    "prerelease": false,
+    "agent_version_arg": "CODEX_VERSION"
+  }
+]

@@ -12,7 +12,7 @@ case "${component}" in
     ;;
   opencode)
     repository=anomalyco/opencode; component_upper=OPENCODE; arg_name=OPENCODE_VERSION
-    dockerfile_relative=golang/Dockerfile; readme_relative=golang/README.md
+    dockerfile_relative=opencode-v1-golang-dev/Dockerfile; readme_relative=opencode-v1-golang-dev/README.md
     tag_pattern='^v(?<version>[0-9]{1,9}\.[0-9]{1,9}\.[0-9]{1,9})$'
     asset_amd64=opencode-linux-x64-baseline.tar.gz
     asset_arm64=opencode-linux-arm64.tar.gz
@@ -101,9 +101,15 @@ sed -E \
   -e "s|(${component_upper}_ASSET=${asset_arm64} ${component_upper}_SHA256=)[[:xdigit:]]{64}|\1${arm64_sha256}|" \
   "${dockerfile}" >"${updated_dockerfile}"
 if [[ "${component}" == codex ]]; then
-  sed -E "s|^Includes pinned Codex \`[0-9]+\.[0-9]+\.[0-9]+\`,|Includes pinned Codex \`${version}\`,|" "${readme}" >"${updated_readme}"
+  sed -E \
+    -e "s|^Includes pinned Codex \`[0-9]+\.[0-9]+\.[0-9]+\`,|Includes pinned Codex \`${version}\`,|" \
+    -e "s|^(docker pull ghcr.io/drobilica/codex-generic-dev:)[0-9]+\.[0-9]+\.[0-9]+\$|\1${version}|" \
+    "${readme}" >"${updated_readme}"
 else
-  sed -E "s|^- OpenCode \`[0-9]+\.[0-9]+\.[0-9]+\`\$|- OpenCode \`${version}\`|" "${readme}" >"${updated_readme}"
+  sed -E \
+    -e "s|^- OpenCode \`[0-9]+\.[0-9]+\.[0-9]+\`\$|- OpenCode \`${version}\`|" \
+    -e "s|^(docker pull ghcr.io/drobilica/opencode-v1-golang-dev:)[0-9]+\.[0-9]+\.[0-9]+\$|\1${version}|" \
+    "${readme}" >"${updated_readme}"
 fi
 
 grep -Eq "^ARG ${arg_name}=${version}\$" "${updated_dockerfile}" || { echo "Version replacement incomplete" >&2; exit 1; }
@@ -113,9 +119,11 @@ grep -Eq "^ARG ${arg_name}=${version}\$" "${updated_dockerfile}" || { echo "Vers
 if [[ "${component}" == codex ]]; then
   grep -Eq "^Includes pinned Codex \`${version}\`," "${updated_readme}" || exit 1
   [[ "$(grep -Ec "^Includes pinned Codex \`${version}\`," "${updated_readme}")" == 1 ]] || exit 1
+  grep -qx "docker pull ghcr.io/drobilica/codex-generic-dev:${version}" "${updated_readme}" || exit 1
 else
   grep -Eq "^- OpenCode \`${version}\`\$" "${updated_readme}" || exit 1
   [[ "$(grep -Ec "^- OpenCode \`${version}\`\$" "${updated_readme}")" == 1 ]] || exit 1
+  grep -qx "docker pull ghcr.io/drobilica/opencode-v1-golang-dev:${version}" "${updated_readme}" || exit 1
 fi
 
 # Prepare and validate both files before replacing either source file.

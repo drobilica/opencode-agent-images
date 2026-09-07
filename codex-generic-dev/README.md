@@ -13,6 +13,11 @@ for remote Code Mode support.
 The image runs as UID 1000 and GID 2000. It contains no project sources,
 repository URLs, credentials, Kubernetes tooling, or OpenCode state.
 
+Use the exact packaged Codex version for normal deployments:
+
 ```bash
-docker pull ghcr.io/drobilica/codex-generic-dev:0.1.0
+docker pull ghcr.io/drobilica/codex-generic-dev:0.153.4
 ```
+
+See the [root README](../README.md) for digest pinning, signature verification,
+and supply-chain metadata.

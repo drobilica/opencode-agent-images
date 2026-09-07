@@ -1,0 +1,28 @@
+name: OpenCode v2 Go Dev
+
+on:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      expected_sha:
+        description: Commit SHA to validate
+        required: true
+        type: string
+  push:
+    branches: [main]
+    tags: ["opencode-v2-golang-dev-v*"]
+
+concurrency:
+  group: opencode-v2-golang-dev-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  image:
+    permissions:
+      contents: write
+      id-token: write
+      packages: write
+    uses: ./.github/workflows/reusable-image-release.yml
+    with:
+      family: opencode-v2-golang-dev
+      expected_sha: ${{ inputs.expected_sha || '' }}

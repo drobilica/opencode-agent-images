@@ -3,9 +3,16 @@ FROM golang:1.27.0-bookworm@sha256:ded31c68586d2e49e760acc2e65a884b23d032e9bbbed
 ARG CODEX_VERSION=0.153.4
 ARG UV_VERSION=0.12.7
 ARG IMAGE_VERSION=dev
+ARG IMAGE_REVISION=dev
 ARG TARGETARCH
 
-LABEL org.opencontainers.image.version="${IMAGE_VERSION}"
+LABEL org.opencontainers.image.title="Codex Generic Dev" \
+      org.opencontainers.image.description="Codex development image with Go, Python, and uv toolchains" \
+      org.opencontainers.image.version="${IMAGE_VERSION}" \
+      org.opencontainers.image.source="https://github.com/drobilica/opencode-agent-images" \
+      org.opencontainers.image.revision="${IMAGE_REVISION}" \
+      org.opencontainers.image.documentation="https://github.com/drobilica/opencode-agent-images/tree/main/codex-generic-dev" \
+      org.opencontainers.image.licenses="MIT"
 
 ENV DEBIAN_FRONTEND=noninteractive \
     HOME=/home/codex \

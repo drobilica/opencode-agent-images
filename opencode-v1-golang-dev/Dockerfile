@@ -2,9 +2,16 @@ FROM golang:1.27.0-bookworm@sha256:ded31c68586d2e49e760acc2e65a884b23d032e9bbbed
 
 ARG OPENCODE_VERSION=1.18.29
 ARG IMAGE_VERSION=dev
+ARG IMAGE_REVISION=dev
 ARG TARGETARCH
 
-LABEL org.opencontainers.image.version="${IMAGE_VERSION}"
+LABEL org.opencontainers.image.title="OpenCode v1 Go Dev" \
+      org.opencontainers.image.description="OpenCode v1 development image with the Go toolchain" \
+      org.opencontainers.image.version="${IMAGE_VERSION}" \
+      org.opencontainers.image.source="https://github.com/drobilica/opencode-agent-images" \
+      org.opencontainers.image.revision="${IMAGE_REVISION}" \
+      org.opencontainers.image.documentation="https://github.com/drobilica/opencode-agent-images/tree/main/opencode-v1-golang-dev" \
+      org.opencontainers.image.licenses="MIT"
 
 ENV DEBIAN_FRONTEND=noninteractive \
     HOME=/home/opencode \
