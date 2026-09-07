@@ -8,6 +8,9 @@ changelog:
       labels:
         - ci
         - maintenance
+        - security
+        - supply-chain
+        - documentation
     - title: Other changes
       labels:
         - "*"

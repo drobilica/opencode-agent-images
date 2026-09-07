@@ -1,7 +1,16 @@
 version: 2
 updates:
   - package-ecosystem: docker
-    directory: /golang
+    directory: /opencode-v1-golang-dev
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 10
+    ignore:
+      - dependency-name: "golang"
+        update-types: ["version-update:semver-patch"]
+
+  - package-ecosystem: docker
+    directory: /opencode-v2-golang-dev
     schedule:
       interval: weekly
     open-pull-requests-limit: 10

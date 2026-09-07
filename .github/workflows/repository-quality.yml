@@ -18,16 +18,44 @@ jobs:
       - name: Check shell syntax
         run: bash -n .github/scripts/*.sh
 
+      - name: Validate image metadata and updater behavior
+        run: |
+          jq -e '
+            length == 3
+            and ([.[].family] | unique | length == 3)
+            and ([.[].package] | unique | length == 3)
+            and all(.[];
+              (.family | test("^(opencode-v[12]-golang-dev|codex-generic-dev)$"))
+              and (.dockerfile == (.path + "/Dockerfile"))
+              and (.package == ("ghcr.io/drobilica/" + .family))
+              and (.release_tag_prefix == (.family + "-v"))
+              and (.moving_tags == ["latest"])
+              and (.prerelease | type == "boolean"))
+          ' images.json
+          for family in opencode-v1-golang-dev opencode-v2-golang-dev codex-generic-dev; do
+            bash .github/scripts/image-metadata.sh "${family}" >/dev/null
+          done
+          bash .github/scripts/test-update-dependencies.sh
+
       - name: Run ShellCheck
         run: |
           sudo apt-get update
           sudo apt-get install --yes shellcheck
           shellcheck --severity=error .github/scripts/*.sh
 
-      - name: Lint Golang Dockerfile
+      - name: Lint workflows
+        uses: raven-actions/actionlint@3d39aea434753780c3b3d4a1a31c854b4dbf49d7 # v2.2.0
+
+      - name: Lint OpenCode v1 Dockerfile
         uses: hadolint/hadolint-action@2a66e89f53d0771bb131a7fa31f3136336094aa6 # v3.4.0
         with:
-          dockerfile: golang/Dockerfile
+          dockerfile: opencode-v1-golang-dev/Dockerfile
+          failure-threshold: error
+
+      - name: Lint OpenCode v2 Dockerfile
+        uses: hadolint/hadolint-action@2a66e89f53d0771bb131a7fa31f3136336094aa6 # v3.4.0
+        with:
+          dockerfile: opencode-v2-golang-dev/Dockerfile
           failure-threshold: error
 
       - name: Lint Codex Dockerfile

@@ -1,0 +1,28 @@
+name: Codex Generic Dev
+
+on:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      expected_sha:
+        description: Commit SHA to validate
+        required: true
+        type: string
+  push:
+    branches: [main]
+    tags: ["codex-generic-dev-v*.*.*"]
+
+concurrency:
+  group: codex-generic-dev-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  image:
+    permissions:
+      contents: write
+      id-token: write
+      packages: write
+    uses: ./.github/workflows/reusable-image-release.yml
+    with:
+      family: codex-generic-dev
+      expected_sha: ${{ inputs.expected_sha || '' }}
