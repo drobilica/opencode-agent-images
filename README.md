@@ -44,11 +44,11 @@ Release images include BuildKit SPDX SBOM and maximum-mode provenance
 attestations, OCI source/version/revision/documentation/license metadata, a
 visible Trivy vulnerability report, and a keyless Sigstore signature created
 with GitHub Actions OIDC. Verify a signature against the exact digest and the
-family workflow identity shown in its GitHub Release:
+reusable release workflow identity shown in its GitHub Release:
 
 ```bash
 cosign verify \
-  --certificate-identity "https://github.com/drobilica/opencode-agent-images/.github/workflows/opencode-v1-golang-dev.yml@refs/tags/opencode-v1-golang-dev-v<agent-version>" \
+  --certificate-identity "https://github.com/drobilica/opencode-agent-images/.github/workflows/reusable-image-release.yml@refs/tags/opencode-v1-golang-dev-v<agent-version>" \
   --certificate-oidc-issuer "https://token.actions.githubusercontent.com" \
   ghcr.io/drobilica/opencode-v1-golang-dev@sha256:<digest>
 ```

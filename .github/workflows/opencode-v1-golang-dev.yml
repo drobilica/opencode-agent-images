@@ -8,6 +8,10 @@ on:
         description: Commit SHA to validate
         required: true
         type: string
+      release_tag:
+        description: Existing image release tag to resume after a post-publication failure
+        required: false
+        type: string
   push:
     branches: [main]
     tags: ["opencode-v1-golang-dev-v*.*.*"]
@@ -26,3 +30,4 @@ jobs:
     with:
       family: opencode-v1-golang-dev
       expected_sha: ${{ inputs.expected_sha || '' }}
+      release_tag: ${{ inputs.release_tag || '' }}

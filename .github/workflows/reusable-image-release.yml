@@ -10,6 +10,10 @@ on:
         required: false
         type: string
         default: ""
+      release_tag:
+        required: false
+        type: string
+        default: ""
 
 jobs:
   validate:
@@ -97,7 +101,7 @@ jobs:
 
   publish:
     name: Publish, attest, sign, and release
-    if: startsWith(github.ref, 'refs/tags/')
+    if: startsWith(github.ref, 'refs/tags/') || inputs.release_tag != ''
     needs: validate
     runs-on: ubuntu-latest
     permissions:
@@ -114,8 +118,14 @@ jobs:
         id: image
         env:
           FAMILY: ${{ inputs.family }}
-          TAG_NAME: ${{ github.ref_name }}
-        run: bash .github/scripts/image-metadata.sh "${FAMILY}" "${TAG_NAME}"
+          INPUT_TAG: ${{ inputs.release_tag }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          tag_name="${INPUT_TAG:-${REF_NAME}}"
+          bash .github/scripts/image-metadata.sh "${FAMILY}" "${tag_name}"
+          revision="$(git rev-parse "refs/tags/${tag_name}^{commit}")"
+          echo "tag_name=${tag_name}" >>"${GITHUB_OUTPUT}"
+          echo "revision=${revision}" >>"${GITHUB_OUTPUT}"
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@29109295f81e9208d7d86ff1c6c12d2833863392 # v3.6.0
@@ -134,6 +144,7 @@ jobs:
         id: existing
         env:
           PACKAGE: ${{ steps.image.outputs.package }}
+          REVISION: ${{ steps.image.outputs.revision }}
           VERSION: ${{ steps.image.outputs.agent_version }}
         run: |
           if docker buildx imagetools inspect "${PACKAGE}:${VERSION}" >/dev/null 2>&1; then
@@ -141,7 +152,7 @@ jobs:
             docker pull --platform linux/amd64 "${PACKAGE}@${digest}"
             revision="$(docker image inspect --format '{{ index .Config.Labels "org.opencontainers.image.revision" }}' "${PACKAGE}@${digest}")"
             image_version="$(docker image inspect --format '{{ index .Config.Labels "org.opencontainers.image.version" }}' "${PACKAGE}@${digest}")"
-            test "${revision}" = "${GITHUB_SHA}"
+            test "${revision}" = "${REVISION}"
             test "${image_version}" = "${VERSION}"
             echo "Reusing exact tag from this commit without mutating it: ${PACKAGE}@${digest}"
             echo "exists=true" >>"${GITHUB_OUTPUT}"
@@ -167,12 +178,12 @@ jobs:
             index:org.opencontainers.image.description=${{ steps.image.outputs.description }}
             index:org.opencontainers.image.version=${{ steps.image.outputs.agent_version }}
             index:org.opencontainers.image.source=https://github.com/drobilica/opencode-agent-images
-            index:org.opencontainers.image.revision=${{ github.sha }}
+            index:org.opencontainers.image.revision=${{ steps.image.outputs.revision }}
             index:org.opencontainers.image.documentation=https://github.com/drobilica/opencode-agent-images/tree/main/${{ inputs.family }}
             index:org.opencontainers.image.licenses=MIT
           build-args: |
             IMAGE_VERSION=${{ steps.image.outputs.agent_version }}
-            IMAGE_REVISION=${{ github.sha }}
+            IMAGE_REVISION=${{ steps.image.outputs.revision }}
           sbom: true
           provenance: mode=max
           cache-from: type=gha,scope=${{ inputs.family }}-release
@@ -197,6 +208,7 @@ jobs:
           DIGEST: ${{ steps.release.outputs.digest }}
           FAMILY: ${{ inputs.family }}
           PACKAGE: ${{ steps.image.outputs.package }}
+          REVISION: ${{ steps.image.outputs.revision }}
           TITLE: ${{ steps.image.outputs.title }}
           VERSION: ${{ steps.image.outputs.agent_version }}
         run: |
@@ -208,7 +220,7 @@ jobs:
           jq -e \
             --arg title "${TITLE}" \
             --arg version "${VERSION}" \
-            --arg revision "${GITHUB_SHA}" \
+            --arg revision "${REVISION}" \
             --arg documentation "https://github.com/drobilica/opencode-agent-images/tree/main/${FAMILY}" \
             '.annotations["org.opencontainers.image.title"] == $title
              and .annotations["org.opencontainers.image.version"] == $version
@@ -217,7 +229,7 @@ jobs:
              and .annotations["org.opencontainers.image.documentation"] == $documentation
              and .annotations["org.opencontainers.image.licenses"] == "MIT"' <<<"${index}"
           docker pull --platform linux/amd64 "${PACKAGE}@${DIGEST}"
-          bash .github/scripts/smoke-test.sh "${FAMILY}" "${PACKAGE}@${DIGEST}" "${VERSION}" linux/amd64 "${GITHUB_SHA}"
+          bash .github/scripts/smoke-test.sh "${FAMILY}" "${PACKAGE}@${DIGEST}" "${VERSION}" linux/amd64 "${REVISION}"
 
       - name: Verify BuildKit attestations
         env:
@@ -255,13 +267,14 @@ jobs:
         env:
           DIGEST: ${{ steps.release.outputs.digest }}
           FAMILY: ${{ inputs.family }}
+          SIGNING_IDENTITY: https://github.com/${{ github.workflow_ref }}
         run: bash .github/scripts/release-notes.sh "${FAMILY}" "${DIGEST}" trivy-release.json release-notes.md
 
       - name: Create GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
           PRERELEASE: ${{ steps.image.outputs.prerelease }}
-          TAG_NAME: ${{ github.ref_name }}
+          TAG_NAME: ${{ steps.image.outputs.tag_name }}
           TITLE: ${{ steps.image.outputs.title }} ${{ steps.image.outputs.agent_version }}
         run: |
           args=(--title "${TITLE}" --notes-file release-notes.md)

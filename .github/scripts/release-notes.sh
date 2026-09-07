@@ -48,7 +48,7 @@ done < <(git tag --list "${prefix}*" --sort=-v:refname)
 
 critical="$(jq '[.Results[]?.Vulnerabilities[]? | select(.Severity == "CRITICAL")] | length' "${trivy_json}")"
 high="$(jq '[.Results[]?.Vulnerabilities[]? | select(.Severity == "HIGH")] | length' "${trivy_json}")"
-identity="https://github.com/drobilica/opencode-agent-images/.github/workflows/${family}.yml@refs/tags/${tag}"
+identity="${SIGNING_IDENTITY:-https://github.com/drobilica/opencode-agent-images/.github/workflows/reusable-image-release.yml@refs/tags/${tag}}"
 
 cat >"${output}" <<EOF
 ## Image
