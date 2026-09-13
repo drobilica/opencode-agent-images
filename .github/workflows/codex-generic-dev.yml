@@ -2,6 +2,12 @@ name: Codex Generic Dev
 
 on:
   pull_request:
+    paths:
+      - codex-generic-dev/**
+      - images.json
+      - .github/workflows/codex-generic-dev.yml
+      - .github/workflows/reusable-image-release.yml
+      - .github/scripts/**
   workflow_dispatch:
     inputs:
       expected_sha:
@@ -15,6 +21,12 @@ on:
   push:
     branches: [main]
     tags: ["codex-generic-dev-v*.*.*"]
+    paths:
+      - codex-generic-dev/**
+      - images.json
+      - .github/workflows/codex-generic-dev.yml
+      - .github/workflows/reusable-image-release.yml
+      - .github/scripts/**
 
 concurrency:
   group: codex-generic-dev-${{ github.ref }}

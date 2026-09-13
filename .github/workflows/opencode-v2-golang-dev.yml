@@ -2,6 +2,12 @@ name: OpenCode v2 Go Dev
 
 on:
   pull_request:
+    paths:
+      - opencode-v2-golang-dev/**
+      - images.json
+      - .github/workflows/opencode-v2-golang-dev.yml
+      - .github/workflows/reusable-image-release.yml
+      - .github/scripts/**
   workflow_dispatch:
     inputs:
       expected_sha:
@@ -15,6 +21,12 @@ on:
   push:
     branches: [main]
     tags: ["opencode-v2-golang-dev-v*"]
+    paths:
+      - opencode-v2-golang-dev/**
+      - images.json
+      - .github/workflows/opencode-v2-golang-dev.yml
+      - .github/workflows/reusable-image-release.yml
+      - .github/scripts/**
 
 concurrency:
   group: opencode-v2-golang-dev-${{ github.ref }}

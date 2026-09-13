@@ -133,3 +133,4 @@ jobs:
             fi
           fi
           gh workflow run "${validation_workflow}" --ref "${BRANCH}" -f "expected_sha=${validation_sha}"
+          gh workflow run repository-quality.yml --ref "${BRANCH}" -f "expected_sha=${validation_sha}"
