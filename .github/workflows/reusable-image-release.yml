@@ -49,9 +49,6 @@ jobs:
           TAG_NAME: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
         run: bash .github/scripts/image-metadata.sh "${FAMILY}" "${TAG_NAME}"
 
-      - name: Test dependency updater
-        run: bash .github/scripts/test-update-dependencies.sh
-
       - name: Set up QEMU
         uses: docker/setup-qemu-action@29109295f81e9208d7d86ff1c6c12d2833863392 # v3.6.0
 

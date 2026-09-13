@@ -2,6 +2,12 @@ name: Repository quality
 
 on:
   pull_request:
+  workflow_dispatch:
+    inputs:
+      expected_sha:
+        description: Commit SHA to validate
+        required: false
+        type: string
   push:
     branches: [main]
 
@@ -14,6 +20,8 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.expected_sha || github.sha }}
 
       - name: Check shell syntax
         run: bash -n .github/scripts/*.sh

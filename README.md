@@ -29,9 +29,8 @@ docker pull ghcr.io/drobilica/opencode-v1-golang-dev:<agent-version>
 docker pull ghcr.io/drobilica/opencode-v1-golang-dev@sha256:<digest>
 ```
 
-Exact-version tags are immutable. Historical
-`ghcr.io/drobilica/opencode-agent-images:golang-*` tags remain available but
-receive no new releases.
+Exact-version tags are immutable. Consumers must use one of the three current
+family packages.
 
 OpenCode v2 is experimental. Its image version is the immutable identifier
 reported by the upstream beta binary, currently

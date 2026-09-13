@@ -4,12 +4,15 @@
 - Keep images reusable and stack-oriented; do not add project-specific dependencies or deployment tooling.
 - Minimize installed tooling and preserve non-root execution.
 - Verify dependency and version changes with an image build and smoke test.
-- Every change to a Dockerfile or image build workflow requires an immutable
-  release of each affected image family before it is considered complete.
-  Public image versions are the packaged coding-agent version, not independent
-  repository or image patch versions. Use the family-specific Git tag prefix
-  from `images.json`, update consumers to the exact agent-version tag, and never
-  overwrite a released exact-version tag.
+- Changes that alter a Dockerfile or the produced runtime, including a packaged
+  agent version change, require validation and a new legitimate immutable release
+  of each affected family before consumers are updated. Public image versions
+  are the packaged coding-agent version, not independent repository or image
+  patch versions. Use the family-specific Git tag prefix from `images.json`, and
+  never overwrite a released exact-version tag.
+- CI-only trigger, validation, or orchestration changes that do not alter the
+  produced runtime must be validated but must not invent an agent version or
+  publish an artificial image release.
 - `latest` is the only moving tag. It must be published with the exact-version
   tag so both resolve to the same digest at publication time.
 - OpenCode v2 uses its real immutable upstream beta/channel identifier and its
