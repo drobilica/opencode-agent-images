@@ -4,7 +4,7 @@ A Debian Bookworm image for OpenCode agents that need Go.
 
 ## Includes
 
-- OpenCode `1.18.29`
+- OpenCode `1.18.32`
 - Go `1.27.0`
 - `git`, GitHub CLI (`gh`), Bash, curl, jq, CA certificates, and ripgrep
 
@@ -15,7 +15,7 @@ The image runs as the non-root `opencode` user. It deliberately excludes Docker,
 Use the exact packaged OpenCode version for normal deployments:
 
 ```bash
-docker pull ghcr.io/drobilica/opencode-v1-golang-dev:1.18.29
+docker pull ghcr.io/drobilica/opencode-v1-golang-dev:1.18.32
 ```
 
 Available versions are listed in [GitHub Releases](https://github.com/drobilica/opencode-agent-images/releases).
