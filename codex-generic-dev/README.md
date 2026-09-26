@@ -2,7 +2,7 @@
 
 Reusable Debian Bookworm development image for a persistent Codex workspace.
 
-Includes pinned Codex `0.153.4`, uv `0.12.7`, Go, Python/venv/pip, Git, GitHub
+Includes pinned Codex `0.157.1`, uv `0.12.7`, Go, Python/venv/pip, Git, GitHub
 CLI, compiler and archive tools, SSH tools, search tools, and process-debugging
 utilities, and Bubblewrap for Codex sandboxing. The downloaded Codex and uv assets use architecture-specific SHA-256
 verification.
@@ -16,7 +16,7 @@ repository URLs, credentials, Kubernetes tooling, or OpenCode state.
 Use the exact packaged Codex version for normal deployments:
 
 ```bash
-docker pull ghcr.io/drobilica/codex-generic-dev:0.153.4
+docker pull ghcr.io/drobilica/codex-generic-dev:0.157.1
 ```
 
 See the [root README](../README.md) for digest pinning, signature verification,
