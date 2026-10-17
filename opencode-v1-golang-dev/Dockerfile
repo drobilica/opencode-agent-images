@@ -1,6 +1,6 @@
 FROM golang:1.27.0-bookworm@sha256:ded31c68586d2e49e760acc2e65a884b23d032e9bbbed0ae0c55abd3fcaf4452
 
-ARG OPENCODE_VERSION=1.18.29
+ARG OPENCODE_VERSION=1.19.3
 ARG IMAGE_VERSION=dev
 ARG IMAGE_REVISION=dev
 ARG TARGETARCH
@@ -33,8 +33,8 @@ RUN apt-get update \
         ripgrep \
     && rm -rf /var/lib/apt/lists/* \
     && case "${TARGETARCH}" in \
-        amd64) OPENCODE_ASSET=opencode-linux-x64-baseline.tar.gz OPENCODE_SHA256=03a3f2f063e23477e3e4c3a738eb389f56c5a6ecf54d6a5a6d91caab557f042d ;; \
-        arm64) OPENCODE_ASSET=opencode-linux-arm64.tar.gz OPENCODE_SHA256=70baf769395ca4e7a68924026530c390eace194f3b7e4919d4efcb2aa2eed3c0 ;; \
+        amd64) OPENCODE_ASSET=opencode-linux-x64-baseline.tar.gz OPENCODE_SHA256=531cff2441129c30f0edd5878af494108ad07f5feb46d7ee29a2a5b830a5765d ;; \
+        arm64) OPENCODE_ASSET=opencode-linux-arm64.tar.gz OPENCODE_SHA256=7900818a6a98881edbbadab4b7525940eff3b9750040c200481f9f56cacee405 ;; \
         *) echo "Unsupported architecture: ${TARGETARCH}" >&2; exit 1 ;; \
     esac \
     && curl -fsSL "https://github.com/anomalyco/opencode/releases/download/v${OPENCODE_VERSION}/${OPENCODE_ASSET}" -o /tmp/opencode.tar.gz \
