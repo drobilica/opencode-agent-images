@@ -1,24 +1,10 @@
 [
   {
-    "family": "opencode-v1-golang-dev",
-    "title": "OpenCode v1 Go Dev",
-    "description": "OpenCode v1 development image with the Go toolchain",
-    "agent": "opencode",
-    "channel": "stable",
-    "path": "opencode-v1-golang-dev",
-    "dockerfile": "opencode-v1-golang-dev/Dockerfile",
-    "package": "ghcr.io/drobilica/opencode-v1-golang-dev",
-    "release_tag_prefix": "opencode-v1-golang-dev-v",
-    "moving_tags": ["latest"],
-    "prerelease": false,
-    "agent_version_arg": "OPENCODE_VERSION"
-  },
-  {
     "family": "opencode-v2-golang-dev",
     "title": "OpenCode v2 Go Dev",
-    "description": "Experimental OpenCode v2 development image with the Go toolchain",
+    "description": "Official OpenCode v2 image with the Go development toolchain",
     "agent": "opencode",
-    "channel": "beta",
+    "channel": "upstream",
     "path": "opencode-v2-golang-dev",
     "dockerfile": "opencode-v2-golang-dev/Dockerfile",
     "package": "ghcr.io/drobilica/opencode-v2-golang-dev",

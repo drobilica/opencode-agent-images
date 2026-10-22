@@ -15,7 +15,7 @@
   publish an artificial image release.
 - `latest` is the only moving tag. It must be published with the exact-version
   tag so both resolve to the same digest at publication time.
-- OpenCode v2 uses its real immutable upstream beta/channel identifier and its
+- OpenCode v2 uses its real published upstream version/channel identifier and its
   GitHub Release is a prerelease; never invent a `2.0.0` version.
 - Published images require OCI metadata, BuildKit SBOM and provenance,
   digest-based keyless Cosign signing, Trivy reporting, and useful per-image

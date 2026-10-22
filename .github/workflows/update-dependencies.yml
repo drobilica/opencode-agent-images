@@ -1,4 +1,4 @@
-name: Update Codex and OpenCode dependencies
+name: Update Codex dependencies
 
 on:
   schedule:
@@ -19,7 +19,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        component: [codex, opencode]
+        component: [codex]
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
@@ -58,12 +58,6 @@ jobs:
               readme=codex-generic-dev/README.md
               title="chore(deps): update Codex CLI to ${NEW_VERSION}"
               validation_workflow=codex-generic-dev.yml
-              ;;
-            opencode)
-              dockerfile=opencode-v1-golang-dev/Dockerfile
-              readme=opencode-v1-golang-dev/README.md
-              title="chore(deps): update OpenCode to ${NEW_VERSION}"
-              validation_workflow=opencode-v1-golang-dev.yml
               ;;
             *) echo "Unexpected component" >&2; exit 2 ;;
           esac
@@ -112,11 +106,7 @@ jobs:
           }
 
           # Include the canonical upstream name rather than a value from release text.
-          if [[ "${COMPONENT}" == codex ]]; then
-            body="$(printf 'Upstream: openai/codex\nPrevious version: %s\nNew version: %s\nRelease: %s\n\nAutomated daily dependency update.\n' "${PREVIOUS_VERSION}" "${NEW_VERSION}" "${RELEASE_URL}")"
-          else
-            body="$(printf 'Upstream: anomalyco/opencode\nPrevious version: %s\nNew version: %s\nRelease: %s\n\nAutomated daily dependency update.\n' "${PREVIOUS_VERSION}" "${NEW_VERSION}" "${RELEASE_URL}")"
-          fi
+          body="$(printf 'Upstream: openai/codex\nPrevious version: %s\nNew version: %s\nRelease: %s\n\nAutomated daily dependency update.\n' "${PREVIOUS_VERSION}" "${NEW_VERSION}" "${RELEASE_URL}")"
           pr_number="$(gh pr list --state open --head "${BRANCH}" --json number,baseRefName |
             jq -r --arg base "${DEFAULT_BRANCH}" '[.[] | select(.baseRefName == $base) | .number][0] // empty')"
           if [[ -n "${pr_number}" ]]; then

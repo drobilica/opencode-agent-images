@@ -13,16 +13,33 @@ revision="${5:-}"
 }
 
 case "${family}" in
-  opencode-v1-golang-dev|opencode-v2-golang-dev)
+  opencode-v2-golang-dev)
     docker run --rm --platform "${platform}" -e EXPECTED="${expected}" "${image}" sh -euxc '
       test "$(id -u)" -ne 0
       test "$(id -un)" = opencode
       test "$HOME" = /home/opencode
-      test "$(opencode --version)" = "$EXPECTED"
+      test "$(opencode --version)" = "opencode v$EXPECTED"
       go version
       git --version
       gh --version
       jq --version
+      printf "%s\n" "package main" "import \"C\"" "func main() { _ = C.int(1) }" > /tmp/smoke.go
+      CGO_ENABLED=1 go run /tmp/smoke.go
+      OPENCODE_SERVER_PASSWORD=smoke-test opencode serve --hostname 127.0.0.1 --port 4096 >/tmp/server.log 2>&1 &
+      server_pid=$!
+      trap "kill $server_pid" EXIT
+      ready=false
+      for attempt in $(seq 1 30); do
+        if curl --fail --silent --user opencode:smoke-test http://127.0.0.1:4096/api/info > /tmp/info.json; then
+          ready=true
+          break
+        fi
+        kill -0 "$server_pid" || { cat /tmp/server.log; exit 1; }
+        sleep 1
+      done
+      test "$ready" = true || { cat /tmp/server.log; exit 1; }
+      jq -e --arg version "$EXPECTED" ".version == \$version" /tmp/info.json
+      test "$(curl --silent --output /dev/null --write-out "%{http_code}" http://127.0.0.1:4096/api/info)" = 401
     '
     ;;
   codex-generic-dev)
