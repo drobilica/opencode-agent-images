@@ -21,8 +21,7 @@ tag="${prefix}${version}"
 reference="${package}@${digest}"
 
 case "${family}" in
-  opencode-v1-golang-dev) upstream_url="https://github.com/anomalyco/opencode/releases/tag/v${version}" ;;
-  opencode-v2-golang-dev) upstream_url="https://www.npmjs.com/package/opencode-ai/v/${version}" ;;
+  opencode-v2-golang-dev) upstream_url="https://github.com/anomalyco/opencode/releases/tag/v${version}" ;;
   codex-generic-dev) upstream_url="https://github.com/openai/codex/releases/tag/rust-v${version}" ;;
   *) echo "Unknown family: ${family}" >&2; exit 2 ;;
 esac
@@ -31,7 +30,8 @@ agent_report="$(docker run --rm --platform linux/amd64 "${reference}" sh -c 'ope
 go_version="$(docker run --rm --platform linux/amd64 "${reference}" sh -c 'go version | awk "{print \$3}"')"
 python_version="$(docker run --rm --platform linux/amd64 "${reference}" sh -c 'python3 --version 2>/dev/null | awk "{print \$2}" || true')"
 uv_version="$(docker run --rm --platform linux/amd64 "${reference}" sh -c 'uv --version 2>/dev/null | awk "{print \$2}" || true')"
-base_image="$(sed -n '1s/^FROM //p' "${root}/$(value dockerfile)")"
+base_image="$(sed -n 's/^FROM //p' "${root}/$(value dockerfile)" | tail -1)"
+base_image="${base_image//\$\{OPENCODE_VERSION\}/${version}}"
 [[ -n "${python_version}" ]] || python_version="not included"
 [[ -n "${uv_version}" ]] || uv_version="not included"
 

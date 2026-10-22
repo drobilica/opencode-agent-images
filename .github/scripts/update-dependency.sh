@@ -10,14 +10,7 @@ case "${component}" in
     asset_amd64=codex-package-x86_64-unknown-linux-musl.tar.gz
     asset_arm64=codex-package-aarch64-unknown-linux-musl.tar.gz
     ;;
-  opencode)
-    repository=anomalyco/opencode; component_upper=OPENCODE; arg_name=OPENCODE_VERSION
-    dockerfile_relative=opencode-v1-golang-dev/Dockerfile; readme_relative=opencode-v1-golang-dev/README.md
-    tag_pattern='^v(?<version>[0-9]{1,9}\.[0-9]{1,9}\.[0-9]{1,9})$'
-    asset_amd64=opencode-linux-x64-baseline.tar.gz
-    asset_arm64=opencode-linux-arm64.tar.gz
-    ;;
-  *) echo "usage: $0 codex|opencode" >&2; exit 2 ;;
+  *) echo "usage: $0 codex" >&2; exit 2 ;;
 esac
 
 repository_root="${REPOSITORY_ROOT:-$(git rev-parse --show-toplevel)}"
@@ -86,11 +79,7 @@ fi
 docker_amd64_count="$(grep -Ec "${component_upper}_ASSET=${asset_amd64} ${component_upper}_SHA256=[[:xdigit:]]{64}" "${dockerfile}" || true)"
 docker_arm64_count="$(grep -Ec "${component_upper}_ASSET=${asset_arm64} ${component_upper}_SHA256=[[:xdigit:]]{64}" "${dockerfile}" || true)"
 [[ "${docker_amd64_count}" == 1 && "${docker_arm64_count}" == 1 ]] || { echo "Expected one checksum line per architecture" >&2; exit 1; }
-if [[ "${component}" == codex ]]; then
-  readme_count="$(grep -Ec '^Includes pinned Codex `[0-9]+\.[0-9]+\.[0-9]+`,' "${readme}" || true)"
-else
-  readme_count="$(grep -Ec '^- OpenCode `[0-9]+\.[0-9]+\.[0-9]+`$' "${readme}" || true)"
-fi
+readme_count="$(grep -Ec '^Includes pinned Codex `[0-9]+\.[0-9]+\.[0-9]+`,' "${readme}" || true)"
 [[ "${readme_count}" == 1 ]] || { echo "Expected one README version pin" >&2; exit 1; }
 
 updated_dockerfile="${temporary_directory}/Dockerfile.updated"
@@ -100,32 +89,17 @@ sed -E \
   -e "s|(${component_upper}_ASSET=${asset_amd64} ${component_upper}_SHA256=)[[:xdigit:]]{64}|\1${amd64_sha256}|" \
   -e "s|(${component_upper}_ASSET=${asset_arm64} ${component_upper}_SHA256=)[[:xdigit:]]{64}|\1${arm64_sha256}|" \
   "${dockerfile}" >"${updated_dockerfile}"
-if [[ "${component}" == codex ]]; then
-  sed -E \
-    -e "s|^Includes pinned Codex \`[0-9]+\.[0-9]+\.[0-9]+\`,|Includes pinned Codex \`${version}\`,|" \
-    -e "s|^(docker pull ghcr.io/drobilica/codex-generic-dev:)[0-9]+\.[0-9]+\.[0-9]+\$|\1${version}|" \
-    "${readme}" >"${updated_readme}"
-else
-  sed -E \
-    -e "s|^- OpenCode \`[0-9]+\.[0-9]+\.[0-9]+\`\$|- OpenCode \`${version}\`|" \
-    -e "s|^(docker pull ghcr.io/drobilica/opencode-v1-golang-dev:)[0-9]+\.[0-9]+\.[0-9]+\$|\1${version}|" \
-    "${readme}" >"${updated_readme}"
-fi
-
+sed -E \
+  -e "s|^Includes pinned Codex \`[0-9]+\.[0-9]+\.[0-9]+\`,|Includes pinned Codex \`${version}\`,|" \
+  -e "s|^(docker pull ghcr.io/drobilica/codex-generic-dev:)[0-9]+\.[0-9]+\.[0-9]+\$|\1${version}|" \
+  "${readme}" >"${updated_readme}"
 grep -Eq "^ARG ${arg_name}=${version}\$" "${updated_dockerfile}" || { echo "Version replacement incomplete" >&2; exit 1; }
 [[ "$(grep -Ec "^ARG ${arg_name}=${version}\$" "${updated_dockerfile}")" == 1 ]] || exit 1
 [[ "$(grep -Ec "${component_upper}_ASSET=${asset_amd64} ${component_upper}_SHA256=${amd64_sha256}" "${updated_dockerfile}")" == 1 ]] || exit 1
 [[ "$(grep -Ec "${component_upper}_ASSET=${asset_arm64} ${component_upper}_SHA256=${arm64_sha256}" "${updated_dockerfile}")" == 1 ]] || exit 1
-if [[ "${component}" == codex ]]; then
-  grep -Eq "^Includes pinned Codex \`${version}\`," "${updated_readme}" || exit 1
-  [[ "$(grep -Ec "^Includes pinned Codex \`${version}\`," "${updated_readme}")" == 1 ]] || exit 1
-  grep -qx "docker pull ghcr.io/drobilica/codex-generic-dev:${version}" "${updated_readme}" || exit 1
-else
-  grep -Eq "^- OpenCode \`${version}\`\$" "${updated_readme}" || exit 1
-  [[ "$(grep -Ec "^- OpenCode \`${version}\`\$" "${updated_readme}")" == 1 ]] || exit 1
-  grep -qx "docker pull ghcr.io/drobilica/opencode-v1-golang-dev:${version}" "${updated_readme}" || exit 1
-fi
-
+grep -Eq "^Includes pinned Codex \`${version}\`," "${updated_readme}" || exit 1
+[[ "$(grep -Ec "^Includes pinned Codex \`${version}\`," "${updated_readme}")" == 1 ]] || exit 1
+grep -qx "docker pull ghcr.io/drobilica/codex-generic-dev:${version}" "${updated_readme}" || exit 1
 # Prepare and validate both files before replacing either source file.
 mv -- "${updated_dockerfile}" "${dockerfile}"
 mv -- "${updated_readme}" "${readme}"

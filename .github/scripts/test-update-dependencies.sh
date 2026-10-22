@@ -4,17 +4,14 @@ set -euo pipefail
 root="$(git rev-parse --show-toplevel)"
 updater="${root}/.github/scripts/update-dependency.sh"
 fixture_codex="${root}/.github/scripts/fixtures/releases.json"
-fixture_opencode="${root}/.github/scripts/fixtures/opencode-releases.json"
 work="$(mktemp -d)"
 trap 'rm -rf "${work}"' EXIT
 
 copy_component() {
   local destination="$1"
-  mkdir -p "${destination}/codex-generic-dev" "${destination}/opencode-v1-golang-dev"
+  mkdir -p "${destination}/codex-generic-dev"
   cp "${root}/codex-generic-dev/Dockerfile" "${destination}/codex-generic-dev/Dockerfile"
   cp "${root}/codex-generic-dev/README.md" "${destination}/codex-generic-dev/README.md"
-  cp "${root}/opencode-v1-golang-dev/Dockerfile" "${destination}/opencode-v1-golang-dev/Dockerfile"
-  cp "${root}/opencode-v1-golang-dev/README.md" "${destination}/opencode-v1-golang-dev/README.md"
 
   # Keep test inputs independent of the versions currently pinned by the
   # repository, including when this suite runs on an automated update PR.
@@ -26,14 +23,6 @@ copy_component() {
     -e 's|^docker pull ghcr.io/drobilica/codex-generic-dev:[0-9]+\.[0-9]+\.[0-9]+$|docker pull ghcr.io/drobilica/codex-generic-dev:0.151.0|' \
     "${destination}/codex-generic-dev/README.md" >"${destination}/codex-generic-dev/README.md.tmp"
   mv "${destination}/codex-generic-dev/README.md.tmp" "${destination}/codex-generic-dev/README.md"
-  sed -E 's/^ARG OPENCODE_VERSION=.*/ARG OPENCODE_VERSION=1.18.25/' \
-    "${destination}/opencode-v1-golang-dev/Dockerfile" >"${destination}/opencode-v1-golang-dev/Dockerfile.tmp"
-  mv "${destination}/opencode-v1-golang-dev/Dockerfile.tmp" "${destination}/opencode-v1-golang-dev/Dockerfile"
-  sed -E \
-    -e 's/^- OpenCode `[0-9]+\.[0-9]+\.[0-9]+`$/- OpenCode `1.18.25`/' \
-    -e 's|^docker pull ghcr.io/drobilica/opencode-v1-golang-dev:[0-9]+\.[0-9]+\.[0-9]+$|docker pull ghcr.io/drobilica/opencode-v1-golang-dev:1.18.25|' \
-    "${destination}/opencode-v1-golang-dev/README.md" >"${destination}/opencode-v1-golang-dev/README.md.tmp"
-  mv "${destination}/opencode-v1-golang-dev/README.md.tmp" "${destination}/opencode-v1-golang-dev/README.md"
   printf 'sentinel\n' >"${destination}/unrelated.txt"
 }
 run_update() {
@@ -57,16 +46,12 @@ expect_failure_without_edits() {
 
 # Codex stable update: exact rust-v tags, highest stable only, and both digests.
 codex_new="${work}/codex-new"; copy_component "${codex_new}"
-cp "${codex_new}/opencode-v1-golang-dev/Dockerfile" "${work}/codex-before-opencode-Dockerfile"
-cp "${codex_new}/opencode-v1-golang-dev/README.md" "${work}/codex-before-opencode-README.md"
 run_update codex "${fixture_codex}" "${codex_new}"
 grep -qx 'ARG CODEX_VERSION=0.152.0' "${codex_new}/codex-generic-dev/Dockerfile"
 grep -q 'CODEX_SHA256=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' "${codex_new}/codex-generic-dev/Dockerfile"
 grep -q 'CODEX_SHA256=bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb' "${codex_new}/codex-generic-dev/Dockerfile"
 grep -q 'Includes pinned Codex `0.152.0`' "${codex_new}/codex-generic-dev/README.md"
 grep -qx 'docker pull ghcr.io/drobilica/codex-generic-dev:0.152.0' "${codex_new}/codex-generic-dev/README.md"
-cmp "${work}/codex-before-opencode-Dockerfile" "${codex_new}/opencode-v1-golang-dev/Dockerfile"
-cmp "${work}/codex-before-opencode-README.md" "${codex_new}/opencode-v1-golang-dev/README.md"
 grep -qx 'sentinel' "${codex_new}/unrelated.txt"
 grep -q '^changed=true$' "${codex_new}/output"
 
@@ -101,31 +86,6 @@ cmp "${before_downgrade}/codex-generic-dev/Dockerfile" "${downgrade}/codex-gener
 cmp "${before_downgrade}/codex-generic-dev/README.md" "${downgrade}/codex-generic-dev/README.md"
 grep -qx 'changed=false' "${downgrade}/output"
 
-# OpenCode uses the vX.Y.Z tag convention and updates only its own files.
-opencode_new="${work}/opencode-new"; copy_component "${opencode_new}"
-cp "${opencode_new}/codex-generic-dev/Dockerfile" "${work}/opencode-before-codex-Dockerfile"
-cp "${opencode_new}/codex-generic-dev/README.md" "${work}/opencode-before-codex-README.md"
-run_update opencode "${fixture_opencode}" "${opencode_new}"
-grep -qx 'ARG OPENCODE_VERSION=1.18.26' "${opencode_new}/opencode-v1-golang-dev/Dockerfile"
-grep -q 'OPENCODE_SHA256=cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc' "${opencode_new}/opencode-v1-golang-dev/Dockerfile"
-grep -q 'OPENCODE_SHA256=dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd' "${opencode_new}/opencode-v1-golang-dev/Dockerfile"
-grep -qx -- '- OpenCode `1.18.26`' "${opencode_new}/opencode-v1-golang-dev/README.md"
-grep -qx 'docker pull ghcr.io/drobilica/opencode-v1-golang-dev:1.18.26' "${opencode_new}/opencode-v1-golang-dev/README.md"
-cmp "${work}/opencode-before-codex-Dockerfile" "${opencode_new}/codex-generic-dev/Dockerfile"
-cmp "${work}/opencode-before-codex-README.md" "${opencode_new}/codex-generic-dev/README.md"
-grep -qx 'sentinel' "${opencode_new}/unrelated.txt"
-
-# OpenCode equality is independently idempotent.
-opencode_equal_fixture="${work}/opencode-equal.json"
-jq '[.[] | select(.tag_name == "v1.18.25")]' "${fixture_opencode}" >"${opencode_equal_fixture}"
-opencode_equal="${work}/opencode-equal"; copy_component "${opencode_equal}"
-cp "${opencode_equal}/opencode-v1-golang-dev/Dockerfile" "${work}/opencode-equal-Dockerfile"
-cp "${opencode_equal}/opencode-v1-golang-dev/README.md" "${work}/opencode-equal-README.md"
-run_update opencode "${opencode_equal_fixture}" "${opencode_equal}" >/dev/null
-cmp "${work}/opencode-equal-Dockerfile" "${opencode_equal}/opencode-v1-golang-dev/Dockerfile"
-cmp "${work}/opencode-equal-README.md" "${opencode_equal}/opencode-v1-golang-dev/README.md"
-grep -qx 'changed=false' "${opencode_equal}/output"
-
 # The workflow's fixed branch and open-PR lookup are deterministic duplicate prevention.
 grep -q 'automation/update-${{ matrix.component }}' "${root}/.github/workflows/update-dependencies.yml"
 grep -q 'gh pr list --state open --head "${BRANCH}"' "${root}/.github/workflows/update-dependencies.yml"
@@ -137,7 +97,6 @@ grep -q 'Automated daily dependency update' "${root}/.github/workflows/update-de
 workflow="${root}/.github/workflows/update-dependencies.yml"
 grep -q '^  actions: write$' "${workflow}"
 grep -q 'validation_workflow=codex-generic-dev.yml' "${workflow}"
-grep -q 'validation_workflow=opencode-v1-golang-dev.yml' "${workflow}"
 grep -q 'git ls-remote origin "refs/heads/${BRANCH}"' "${workflow}"
 grep -q 'gh workflow run "${validation_workflow}" --ref "${BRANCH}"' "${workflow}"
 grep -q 'expected_sha=${validation_sha}' "${workflow}"
@@ -146,7 +105,7 @@ grep -q 'gh pr create --base "${DEFAULT_BRANCH}" --head "${BRANCH}"' "${workflow
 grep -q 'gh pr edit "${pr_number}"' "${workflow}"
 ! grep -q 'pull_request_target\|statuses: write\|checks: write' "${workflow}"
 
-for image_workflow in codex-generic-dev.yml opencode-v1-golang-dev.yml opencode-v2-golang-dev.yml; do
+for image_workflow in codex-generic-dev.yml opencode-v2-golang-dev.yml; do
   image_workflow_path="${root}/.github/workflows/${image_workflow}"
   grep -q '^  pull_request:$' "${image_workflow_path}"
   grep -q '^  workflow_dispatch:$' "${image_workflow_path}"
@@ -160,12 +119,10 @@ grep -q 'test "${GITHUB_SHA}" = "${EXPECTED_SHA}"' "${reusable}"
 grep -q 'ref:.*inputs.expected_sha.*github.sha' "${reusable}"
 grep -q 'branches: \[main\]' "${root}/.github/workflows/codex-generic-dev.yml"
 grep -q 'tags: \["codex-generic-dev-v\*\.\*\.\*"\]' "${root}/.github/workflows/codex-generic-dev.yml"
-grep -q 'branches: \[main\]' "${root}/.github/workflows/opencode-v1-golang-dev.yml"
-grep -q 'tags: \["opencode-v1-golang-dev-v\*\.\*\.\*"\]' "${root}/.github/workflows/opencode-v1-golang-dev.yml"
 
 # Family metadata resolves the pinned agent version and rejects unrelated or
 # generic repository tags before any publication can occur.
-for family in opencode-v1-golang-dev opencode-v2-golang-dev codex-generic-dev; do
+for family in opencode-v2-golang-dev codex-generic-dev; do
   metadata="$(bash "${root}/.github/scripts/image-metadata.sh" "${family}")"
   version="$(sed -n 's/^agent_version=//p' <<<"${metadata}")"
   prefix="$(sed -n 's/^release_tag_prefix=//p' <<<"${metadata}")"

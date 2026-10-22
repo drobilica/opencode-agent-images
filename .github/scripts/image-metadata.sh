@@ -7,7 +7,7 @@ root="$(git rev-parse --show-toplevel)"
 manifest="${root}/images.json"
 
 [[ -n "${family}" ]] || { echo "usage: $0 <family> [git-tag]" >&2; exit 2; }
-jq -e 'type == "array" and length == 3' "${manifest}" >/dev/null
+jq -e 'type == "array" and length == 2' "${manifest}" >/dev/null
 [[ "$(jq --arg family "${family}" '[.[] | select(.family == $family)] | length' "${manifest}")" == 1 ]] || {
   echo "Expected exactly one images.json entry for ${family}" >&2
   exit 1
