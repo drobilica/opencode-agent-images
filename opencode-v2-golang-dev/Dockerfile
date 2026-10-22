@@ -1,6 +1,6 @@
 ARG OPENCODE_VERSION=2.1.2
 
-FROM docker.io/library/golang:1.27.0-bookworm@sha256:ded31c68586d2e49e760acc2e65a884b23d032e9bbbed0ae0c55abd3fcaf4452 AS go
+FROM docker.io/library/golang:1.27.2-bookworm@sha256:5cf287a799e6b94384bad13d16b14904c531f51ba65792237e122ce42b392f61 AS go
 FROM ghcr.io/anomalyco/opencode:${OPENCODE_VERSION}@sha256:d91c668b3390b5416fee4803ffd0936ad30c3e118f550e7ad6d2fabc8b974b00
 
 ARG IMAGE_VERSION=dev
